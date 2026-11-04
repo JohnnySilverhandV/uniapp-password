@@ -61,6 +61,17 @@ body {
 }
 .search-input::placeholder { color: rgba(255,255,255,0.35); }
 .search-clear { font-size: 13px; color: rgba(255,255,255,0.5); padding: 2px 6px; cursor: pointer; }
+.hero-actions { display: flex; gap: 10px; margin-top: 12px; }
+.import-tip { font-size: 12px; color: rgba(255,255,255,0.45); text-align: center; margin-bottom: 10px; }
+.import-area {
+  width: 100%; height: 130px; resize: none;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+  padding: 10px 12px; font-size: 13px; color: #f5f7ff; outline: none;
+  font-family: inherit;
+}
+.import-area::placeholder { color: rgba(255,255,255,0.3); }
+.import-choices { display: flex; flex-direction: column; gap: 10px; }
 
 /* ---------- 类型区块 ---------- */
 .group { border-radius: 16px; margin-bottom: 18px; overflow: hidden; }
@@ -218,6 +229,10 @@ body {
       <input class="search-input" id="searchInput" placeholder="搜索类型 / 标题 / 账号" />
       <span class="search-clear" id="searchClear" style="display:none">✕</span>
     </div>
+    <div class="hero-actions">
+      <div class="btn" id="btnExport">📤 导出</div>
+      <div class="btn" id="btnImport">📥 导入</div>
+    </div>
   </div>
 
   <div id="list"></div>
@@ -260,6 +275,32 @@ body {
   </div>
 </div>
 
+<div class="mask" id="importMask" style="display:none">
+  <div class="editor">
+    <div class="editor-grip"></div>
+    <div class="editor-title">导入数据</div>
+    <div class="import-tip">粘贴之前导出的备份内容，选择「合并」或「覆盖」导入</div>
+    <textarea class="import-area" id="importArea" placeholder="把导出的 JSON 粘贴到这里"></textarea>
+    <div class="editor-actions">
+      <div class="btn ghost" id="btnImportCancel">取消</div>
+      <div class="btn" id="btnPaste">📋 粘贴</div>
+      <div class="btn primary" id="btnConfirmImport">导入</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="importChoiceMask" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="importChoiceTitle">将导入 N 条账号</div>
+    <div class="modal-text">选择导入方式</div>
+    <div class="import-choices">
+      <div class="btn primary" id="btnMerge">合并导入（保留现有）</div>
+      <div class="btn" id="btnReplace" style="color:#f87171">覆盖导入（清空后写入）</div>
+      <div class="btn ghost" id="btnImportChoiceCancel">取消</div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-mask" id="confirmMask" style="display:none">
   <div class="modal">
     <div class="modal-title">确认删除</div>
@@ -284,6 +325,7 @@ body {
   var editingId = null;
   var editingType = '';
   var pendingDelete = null;
+  var pendingImport = null;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -523,6 +565,82 @@ body {
     });
   }
 
+  /* ---------- 导入 / 导出（换机迁移） ---------- */
+  function doExport() {
+    if (groups.length === 0) { toast('还没有数据可导出'); return; }
+    var payload = JSON.stringify({
+      app: 'pwd-vault',
+      ver: 1,
+      time: Date.now(),
+      count: totalCount(),
+      groups: groups
+    });
+    copyText(payload, '已导出 ' + totalCount() + ' 条到剪贴板');
+  }
+
+  function openImport() {
+    $('importArea').value = '';
+    $('importMask').style.display = 'flex';
+  }
+  function closeImport() { $('importMask').style.display = 'none'; }
+
+  function pasteImport() {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function (t) {
+        if (t) { $('importArea').value = t; toast('已粘贴'); }
+      }, function () { toast('读取剪贴板失败，请手动粘贴'); });
+    } else {
+      toast('请长按输入框手动粘贴');
+    }
+  }
+
+  function parseImportPayload(text) {
+    var obj = JSON.parse(text);
+    if (!obj || !Array.isArray(obj.groups)) return null;
+    var gs = obj.groups.filter(function (g) {
+      return g && typeof g.type === 'string' && Array.isArray(g.items);
+    });
+    var count = gs.reduce(function (s, g) { return s + g.items.length; }, 0);
+    return { groups: gs, count: count };
+  }
+
+  function mergeGroups(imported) {
+    imported.forEach(function (gi) {
+      var exist = null;
+      for (var i = 0; i < groups.length; i++) {
+        if (groups[i].type === gi.type) { exist = groups[i]; break; }
+      }
+      if (!exist) { groups.push({ type: gi.type, items: gi.items }); return; }
+      var ids = {};
+      exist.items.forEach(function (it) { ids[it.id] = true; });
+      gi.items.forEach(function (item) {
+        if (!ids[item.id]) exist.items.push(item);
+      });
+    });
+  }
+
+  function confirmImport() {
+    var parsed;
+    try { parsed = parseImportPayload($('importArea').value); }
+    catch (e) { parsed = null; }
+    if (!parsed || parsed.count === 0) { toast('数据格式不对，或没有账号'); return; }
+    pendingImport = parsed;
+    $('importChoiceTitle').textContent = '将导入 ' + parsed.count + ' 条账号';
+    $('importMask').style.display = 'none';
+    $('importChoiceMask').style.display = 'flex';
+  }
+
+  function applyImport(mode) {
+    if (!pendingImport) return;
+    if (mode === 'merge') mergeGroups(pendingImport.groups);
+    else groups = pendingImport.groups;
+    save();
+    pendingImport = null;
+    $('importChoiceMask').style.display = 'none';
+    toast('已导入');
+    render();
+  }
+
   /* ---------- 删除 ---------- */
   function confirmDelete(type, id) {
     pendingDelete = { type: type, id: id };
@@ -531,6 +649,20 @@ body {
 
   /* ---------- 事件绑定 ---------- */
   $('fab').addEventListener('click', openAdd);
+  $('btnExport').addEventListener('click', doExport);
+  $('btnImport').addEventListener('click', openImport);
+  $('btnImportCancel').addEventListener('click', closeImport);
+  $('btnPaste').addEventListener('click', pasteImport);
+  $('btnConfirmImport').addEventListener('click', confirmImport);
+  $('importMask').addEventListener('click', function (e) {
+    if (e.target === this) closeImport();
+  });
+  $('btnMerge').addEventListener('click', function () { applyImport('merge'); });
+  $('btnReplace').addEventListener('click', function () { applyImport('replace'); });
+  $('btnImportChoiceCancel').addEventListener('click', function () {
+    pendingImport = null;
+    $('importChoiceMask').style.display = 'none';
+  });
   $('btnCancel').addEventListener('click', closeEditor);
   $('editorMask').addEventListener('click', function (e) {
     if (e.target === this) closeEditor();

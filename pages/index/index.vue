@@ -11,7 +11,7 @@
     <!-- 顶部标题区 -->
     <view class="hero glass">
       <view class="hero-title-row">
-        <text class="hero-title">🔐 你妈本</text>
+        <text class="hero-title">🔐 密码本</text>
         <text class="hero-count">{{ totalCount }} 条</text>
       </view>
       <view class="search-bar">
@@ -24,6 +24,10 @@
           confirm-type="search"
         />
         <text v-if="keyword" class="search-clear" @click="keyword = ''">✕</text>
+      </view>
+      <view class="hero-actions">
+        <view class="btn" hover-class="btn-press" @click="doExport">📤 导出</view>
+        <view class="btn" hover-class="btn-press" @click="openImport">📥 导入</view>
       </view>
     </view>
 
@@ -119,6 +123,29 @@
         <view class="editor-actions">
           <view class="btn ghost" hover-class="btn-press" @click="closeEditor">取消</view>
           <view class="btn primary" hover-class="btn-press" @click="saveItem">保存</view>
+        </view>
+        <view class="safe-bottom"></view>
+      </view>
+    </view>
+
+    <!-- 导入弹窗：同为底部抽屉 -->
+    <view v-if="showImporter" class="mask" @click="closeImport">
+      <view class="editor glass-strong" @click.stop>
+        <view class="editor-grip"></view>
+        <view class="editor-title">导入数据</view>
+        <view class="import-tip">粘贴之前导出的备份内容，选择「合并」或「覆盖」导入</view>
+        <textarea
+          class="import-area"
+          v-model="importText"
+          placeholder="把导出的 JSON 粘贴到这里"
+          placeholder-class="ph"
+          :maxlength="-1"
+          :cursor-spacing="20"
+        />
+        <view class="editor-actions">
+          <view class="btn ghost" hover-class="btn-press" @click="closeImport">取消</view>
+          <view class="btn" hover-class="btn-press" @click="pasteImport">📋 粘贴</view>
+          <view class="btn primary" hover-class="btn-press" @click="confirmImport">导入</view>
         </view>
         <view class="safe-bottom"></view>
       </view>
@@ -326,6 +353,100 @@ function removeItem(type, id) {
   })
 }
 
+/* ---------- 导入 / 导出（换机迁移） ---------- */
+const showImporter = ref(false)
+const importText = ref('')
+
+function doExport() {
+  if (groups.value.length === 0) {
+    uni.showToast({ title: '还没有数据可导出', icon: 'none' })
+    return
+  }
+  const payload = JSON.stringify({
+    app: 'pwd-vault',
+    ver: 1,
+    time: Date.now(),
+    count: totalCount.value,
+    groups: groups.value
+  })
+  uni.setClipboardData({
+    data: payload,
+    success: () => uni.showToast({
+      title: `已导出 ${totalCount.value} 条到剪贴板`,
+      icon: 'none'
+    })
+  })
+}
+
+function openImport() {
+  importText.value = ''
+  showImporter.value = true
+}
+
+function closeImport() {
+  showImporter.value = false
+}
+
+function pasteImport() {
+  uni.getClipboardData({
+    success: (res) => {
+      if (res.data) {
+        importText.value = res.data
+        uni.showToast({ title: '已粘贴', icon: 'none' })
+      }
+    },
+    fail: () => uni.showToast({ title: '读取剪贴板失败，请手动粘贴', icon: 'none' })
+  })
+}
+
+function parseImportPayload(text) {
+  const obj = JSON.parse(text)
+  if (!obj || !Array.isArray(obj.groups)) return null
+  const groups = obj.groups.filter(g =>
+    g && typeof g.type === 'string' && Array.isArray(g.items)
+  )
+  const count = groups.reduce((s, g) => s + g.items.length, 0)
+  return { groups, count }
+}
+
+function confirmImport() {
+  let parsed
+  try {
+    parsed = parseImportPayload(importText.value)
+  } catch (e) {
+    parsed = null
+  }
+  if (!parsed || parsed.count === 0) {
+    uni.showToast({ title: '数据格式不对，或没有账号', icon: 'none' })
+    return
+  }
+
+  uni.showActionSheet({
+    itemList: [`合并导入（追加 ${parsed.count} 条，保留现有）`, `覆盖导入（清空后写入 ${parsed.count} 条）`],
+    success: (res) => {
+      if (res.tapIndex === 0) mergeGroups(parsed.groups)
+      else groups.value = parsed.groups
+      save()
+      showImporter.value = false
+      uni.showToast({ title: `已导入 ${parsed.count} 条`, icon: 'none' })
+    }
+  })
+}
+
+function mergeGroups(imported) {
+  imported.forEach(gi => {
+    const exist = groups.value.find(g => g.type === gi.type)
+    if (!exist) {
+      groups.value.push({ type: gi.type, items: gi.items })
+      return
+    }
+    const existIds = new Set(exist.items.map(i => i.id))
+    gi.items.forEach(item => {
+      if (!existIds.has(item.id)) exist.items.push(item)
+    })
+  })
+}
+
 load()
 </script>
 
@@ -466,6 +587,31 @@ load()
   font-size: 26rpx;
   color: rgba(255, 255, 255, 0.5);
   padding: 4rpx 8rpx;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+/* ---------- 导入 ---------- */
+.import-tip {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  margin-bottom: 18rpx;
+}
+
+.import-area {
+  width: 100%;
+  height: 240rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.12);
+  border-radius: 14rpx;
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
+  color: #f5f7ff;
 }
 
 /* ---------- 类型区块 ---------- */
