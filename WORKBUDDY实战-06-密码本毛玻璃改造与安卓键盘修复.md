@@ -1,6 +1,25 @@
 # WORKBUDDY 实战 06：密码本毛玻璃改造与安卓键盘修复
 
-> 更新点（v3，2026-11-04）：新增导入/导出（换机迁移）；v2：托管撤回，本地 APP 不托管；v1：整体改造。
+> 更新点（v4，2026-11-04）：v1.1.0 双推 + 双 Release 完成，Gitee Release API 新坑记录；用户旧数据（截图）→ JSON 迁移落地。v3：导入导出。v2：托管撤回。v1：整体改造。
+
+## 〇-a、发布记录（v4）
+
+- 双推已配：origin 挂两个 pushurl（Gitee 在前、GitHub 在后），`git push origin main` 一次推两边
+- 仓库：GitHub `JohnnySilverhandV/uniapp-password`（私有，API 新建后回读 full_name 验证）、Gitee `johnny-silver-hand123/uniapp-password`
+- tag v1.1.0，双平台 Release：
+  - GitHub：`https://github.com/JohnnySilverhandV/uniapp-password/releases/tag/v1.1.0`
+  - Gitee：`https://gitee.com/johnny-silver-hand123/uniapp-password/releases/tag/v1.1.0`（接口返回 html_url 为 null，按 releases/tag/{tag} 手拼）
+- **新坑：Gitee 手动建 Release 必须 `target_commitish`**（传 tag 对应 commit SHA），否则 400 "target_commitish is missing"；release.py 时代没暴露是因为脚本内部带了
+- **新坑确认：GitHub push 的 schannel 吊销检查问题依旧**，`-c http.sslVerify=false -c http.schannelCheckRevoke=false` 单条命令绕过，双推时 Gitee 成功 GitHub 失败会导致「半推」状态，失败后重推即可（幂等）
+- 无 release.py 的项目手动流程：commit → tag → 双推（main + tag）→ 双平台 Release → 回读验证
+
+## 〇-b、旧数据迁移实践（v4，不含任何真实数据）
+
+用户旧版没导出功能，靠截图迁移：截图 OCR 出类型/标题/账号/密码 → node 生成新版格式 JSON（密码按 encode 编码）→ 用户复制导入。要点：
+
+- 旧版 App 显示即存储原文，截图里的字符串（含看似省略号的点）就是密码本身，不要自作聪明追问截断
+- 生成后必须 round-trip 自检（decode 回原文比对）再交付
+- **密码数据只走剪贴板/对话，绝不落盘进仓库、不进笔记、不进 Release 文案**（用户明确要求）
 
 ## 〇、导入/导出（换机迁移，v3 新增）
 
@@ -73,5 +92,5 @@ H5 端同构实现：移动端浏览器键盘同样会压缩视口，底部抽�
 
 ## 七、待办（需用户确认）
 
-- git 已本地提交两个 commit，**未推送**（远端目前只挂了 Gitee，双推 GitHub 待配）
-- App 版需 HBuilderX 重新打包 APK 才能真机验证键盘修复效果
+- ~~git 已本地提交两个 commit，未推送~~ **v4 已完成：双推 + 双 Release（v1.1.0）**
+- App 版需 HBuilderX 重新打包 APK 才能真机验证键盘修复效果（用户自测中）
