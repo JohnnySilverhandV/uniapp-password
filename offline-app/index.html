@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>🔐 你妈本</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(160deg, #0b1020 0%, #141b33 55%, #0b1020 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---------- 背景光斑 ---------- */
+.bg {
+  position: fixed; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+}
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(60px); opacity: 0.5;
+}
+.b1 { width: 340px; height: 340px; background: #2563eb; top: -80px; left: -90px; animation: f1 18s ease-in-out infinite alternate; }
+.b2 { width: 300px; height: 300px; background: #db2777; top: 30%; right: -110px; animation: f2 22s ease-in-out infinite alternate; }
+.b3 { width: 320px; height: 320px; background: #7c3aed; bottom: -100px; left: 15%; animation: f3 26s ease-in-out infinite alternate; }
+@keyframes f1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,110px) scale(1.15); } }
+@keyframes f2 { from { transform: translate(0,0) scale(1.1); } to { transform: translate(-100px,80px) scale(0.9); } }
+@keyframes f3 { from { transform: translate(0,0) scale(1); } to { transform: translate(70px,-100px) scale(1.2); } }
+
+.page {
+  position: relative; z-index: 1;
+  max-width: 520px; margin: 0 auto;
+  padding: 20px 14px 120px;
+}
+
+.glass {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ---------- 顶部 ---------- */
+.hero { border-radius: 16px; padding: 18px; margin-bottom: 18px; }
+.hero-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.hero-title { font-size: 22px; font-weight: 700; color: #f5f7ff; letter-spacing: 1px; }
+.hero-count { font-size: 13px; color: rgba(255,255,255,0.55); }
+.search-bar {
+  display: flex; align-items: center;
+  background: rgba(255,255,255,0.1); border-radius: 10px; padding: 9px 12px;
+}
+.search-icon { font-size: 14px; margin-right: 8px; }
+.search-input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 14px; color: #f5f7ff;
+}
+.search-input::placeholder { color: rgba(255,255,255,0.35); }
+.search-clear { font-size: 13px; color: rgba(255,255,255,0.5); padding: 2px 6px; cursor: pointer; }
+
+/* ---------- 类型区块 ---------- */
+.group { border-radius: 16px; margin-bottom: 18px; overflow: hidden; }
+.group-header {
+  display: flex; align-items: center; padding: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.group-badge {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-right: 10px;
+}
+.group-title { font-size: 16px; font-weight: 600; color: #f5f7ff; flex: 1; }
+.group-count { font-size: 13px; color: rgba(255,255,255,0.45); }
+
+/* ---------- 账号卡片 ---------- */
+.item-card {
+  padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.07);
+  animation: fadeUp 0.4s cubic-bezier(0.22,0.8,0.36,1) both;
+}
+.item-card:last-child { border-bottom: none; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.item-line { margin-bottom: 6px; }
+.item-top { display: flex; align-items: center; justify-content: space-between; }
+.item-title { font-size: 15px; font-weight: 600; color: #f5f7ff; }
+.item-del { font-size: 12px; color: #f87171; padding: 2px 6px; cursor: pointer; }
+.item-username { font-size: 14px; color: rgba(255,255,255,0.65); cursor: pointer; }
+.pwd-line { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.item-pwd { font-size: 14px; color: rgba(255,255,255,0.55); letter-spacing: 1px; }
+.item-pwd.revealed { color: #6ee7b7; animation: reveal 0.25s ease; }
+@keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+.pwd-eye { font-size: 14px; padding: 2px 6px; }
+.item-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  flex: 1; text-align: center; padding: 8px 0; font-size: 13px;
+  border-radius: 8px; cursor: pointer; user-select: none;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85); transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.btn:active { transform: scale(0.95); opacity: 0.7; }
+.btn.primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; color: #fff; font-weight: 600; }
+.btn.ghost { background: rgba(255,255,255,0.06); }
+
+.toggle {
+  text-align: center; padding: 12px 0; font-size: 13px; color: #93c5fd;
+  background: rgba(255,255,255,0.04); cursor: pointer;
+}
+.toggle:active { opacity: 0.7; }
+
+/* ---------- FAB ---------- */
+.fab {
+  position: fixed; right: 22px; bottom: calc(30px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff; font-size: 30px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 22px rgba(99,102,241,0.5);
+  border: 1px solid rgba(255,255,255,0.25); cursor: pointer;
+  transition: transform 0.15s ease; z-index: 10;
+}
+.fab:active { transform: scale(0.88) rotate(90deg); }
+
+/* ---------- 底部抽屉编辑器 ---------- */
+.mask {
+  position: fixed; inset: 0; z-index: 99;
+  background: rgba(5,8,18,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: maskIn 0.25s ease both;
+}
+@keyframes maskIn { from { opacity: 0; } to { opacity: 1; } }
+
+.editor {
+  width: 100%; max-width: 520px;
+  background: rgba(30,38,66,0.92);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 20px 20px 0 0;
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+  animation: sheetUp 0.3s cubic-bezier(0.22,0.8,0.36,1) both;
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.editor-grip { width: 40px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.25); margin: 4px auto 16px; }
+.editor-title { font-size: 17px; font-weight: 600; text-align: center; color: #f5f7ff; margin-bottom: 16px; }
+.field { margin-bottom: 12px; }
+.field-label { display: block; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+.input {
+  width: 100%; background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+  padding: 11px 12px; font-size: 15px; color: #f5f7ff; outline: none;
+}
+.input:focus { border-color: rgba(139,92,246,0.6); }
+.input::placeholder { color: rgba(255,255,255,0.3); }
+.pwd-input-row { display: flex; gap: 8px; align-items: center; }
+.pwd-input { flex: 1; }
+.dice {
+  width: 42px; height: 42px; border-radius: 8px;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; flex-shrink: 0;
+}
+.dice:active { transform: scale(0.92); }
+.editor-actions { display: flex; gap: 12px; margin-top: 16px; }
+
+/* ---------- 空状态 / 提示 ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; margin-top: 90px; }
+.empty-icon { font-size: 44px; margin-bottom: 12px; animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.empty-text { color: rgba(255,255,255,0.45); font-size: 14px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%);
+  background: rgba(30,38,66,0.95); border: 1px solid rgba(255,255,255,0.2);
+  color: #f5f7ff; font-size: 14px; padding: 10px 22px; border-radius: 30px;
+  z-index: 200; animation: toastIn 0.25s ease both; pointer-events: none;
+}
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+.modal-mask {
+  position: fixed; inset: 0; z-index: 150; background: rgba(5,8,18,0.6);
+  display: flex; align-items: center; justify-content: center;
+  animation: maskIn 0.2s ease both;
+}
+.modal {
+  width: 300px; background: rgba(30,38,66,0.96);
+  border: 1px solid rgba(255,255,255,0.18); border-radius: 16px;
+  padding: 24px 20px 16px; text-align: center;
+  animation: fadeUp 0.25s ease both;
+}
+.modal-title { font-size: 16px; font-weight: 600; color: #f5f7ff; margin-bottom: 10px; }
+.modal-text { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 12px; }
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<div class="page">
+  <div class="hero glass">
+    <div class="hero-title-row">
+      <span class="hero-title">🔐 你妈本</span>
+      <span class="hero-count" id="totalCount">0 条</span>
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="搜索类型 / 标题 / 账号" />
+      <span class="search-clear" id="searchClear" style="display:none">✕</span>
+    </div>
+  </div>
+
+  <div id="list"></div>
+
+  <div id="empty" class="empty" style="display:none">
+    <span class="empty-icon">🗄️</span>
+    <span class="empty-text">还没有账号，点右下角 + 添加</span>
+  </div>
+
+  <div class="fab" id="fab">＋</div>
+</div>
+
+<div class="mask" id="editorMask" style="display:none">
+  <div class="editor" id="editor">
+    <div class="editor-grip"></div>
+    <div class="editor-title" id="editorTitle">新增账号</div>
+    <div class="field">
+      <label class="field-label">类型</label>
+      <input class="input" id="fType" placeholder="如 QQ、微信" />
+    </div>
+    <div class="field">
+      <label class="field-label">标题</label>
+      <input class="input" id="fTitle" placeholder="如 大号" />
+    </div>
+    <div class="field">
+      <label class="field-label">账号</label>
+      <input class="input" id="fUsername" placeholder="用户名 / 手机 / 邮箱" />
+    </div>
+    <div class="field">
+      <label class="field-label">密码</label>
+      <div class="pwd-input-row">
+        <input class="input pwd-input" id="fPassword" type="password" placeholder="输入或点 🎲 生成" />
+        <div class="dice" id="dice">🎲</div>
+      </div>
+    </div>
+    <div class="editor-actions">
+      <div class="btn ghost" id="btnCancel">取消</div>
+      <div class="btn primary" id="btnSave">保存</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="confirmMask" style="display:none">
+  <div class="modal">
+    <div class="modal-title">确认删除</div>
+    <div class="modal-text">删除后不可恢复</div>
+    <div class="modal-actions">
+      <div class="btn ghost" id="mCancel">取消</div>
+      <div class="btn primary" id="mConfirm">删除</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'pwd_groups';   // 与 App 版互通
+  var groups = [];
+  var showMap = {};
+  var expanded = {};
+  var hideTimers = {};
+  var keyword = '';
+  var editingId = null;
+  var editingType = '';
+  var pendingDelete = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- 编解码（与 App 版互通，兼容中文密码） ---------- */
+  function encode(str) {
+    if (!str) return '';
+    return btoa(unescape(encodeURIComponent(str))).split('').reverse().join('');
+  }
+  function decode(str) {
+    if (!str) return '';
+    try { return decodeURIComponent(escape(atob(str.split('').reverse().join('')))); }
+    catch (e) { return '解密失败'; }
+  }
+
+  /* ---------- 读写 ---------- */
+  function load() {
+    try {
+      var data = localStorage.getItem(KEY);
+      groups = data ? JSON.parse(data) : [];
+    } catch (e) { groups = []; }
+  }
+  function save() { localStorage.setItem(KEY, JSON.stringify(groups)); }
+
+  /* ---------- 搜索过滤 ---------- */
+  function filteredGroups() {
+    var kw = keyword.trim().toLowerCase();
+    if (!kw) return groups;
+    return groups
+      .map(function (g) {
+        var items = g.items.filter(function (i) {
+          return g.type.toLowerCase().indexOf(kw) > -1 ||
+                 i.title.toLowerCase().indexOf(kw) > -1 ||
+                 i.username.toLowerCase().indexOf(kw) > -1;
+        });
+        return { type: g.type, items: items };
+      })
+      .filter(function (g) { return g.items.length > 0; });
+  }
+
+  function totalCount() {
+    return groups.reduce(function (s, g) { return s + g.items.length; }, 0);
+  }
+
+  /* ---------- 渲染 ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function render() {
+    var fg = filteredGroups();
+    var html = '';
+
+    fg.forEach(function (g) {
+      var isExpanded = !!expanded[g.type];
+      var items = isExpanded ? g.items : g.items.slice(0, 1);
+
+      html += '<div class="group glass">'
+        + '<div class="group-header">'
+        + '<div class="group-badge">' + esc(g.type.slice(0, 1)) + '</div>'
+        + '<span class="group-title">' + esc(g.type) + '</span>'
+        + '<span class="group-count">' + g.items.length + ' 个</span>'
+        + '</div>';
+
+      items.forEach(function (item, idx) {
+        var shown = !!showMap[item.id];
+        html += '<div class="item-card" style="animation-delay:' + (idx * 0.06) + 's">'
+          + '<div class="item-line item-top">'
+          + '<span class="item-title">' + esc(item.title) + '</span>'
+          + '<span class="item-del" data-act="del" data-type="' + esc(g.type) + '" data-id="' + item.id + '">删除</span>'
+          + '</div>'
+          + '<div class="item-line item-username" data-act="copyUser" data-id="' + item.id + '">' + esc(item.username) + '</div>'
+          + '<div class="item-line pwd-line" data-act="toggle" data-id="' + item.id + '">'
+          + '<span class="item-pwd' + (shown ? ' revealed' : '') + '">' + (shown ? esc(decode(item.password)) : '• • • • • • • •') + '</span>'
+          + '<span class="pwd-eye">' + (shown ? '🙈' : '👁️') + '</span>'
+          + '</div>'
+          + '<div class="item-actions">'
+          + '<div class="btn" data-act="copyUser" data-id="' + item.id + '">复制账号</div>'
+          + '<div class="btn" data-act="copyPwd" data-id="' + item.id + '">复制密码</div>'
+          + '<div class="btn" data-act="edit" data-type="' + esc(g.type) + '" data-id="' + item.id + '">编辑</div>'
+          + '</div>'
+          + '</div>';
+      });
+
+      if (g.items.length > 1) {
+        html += '<div class="toggle" data-act="expand" data-type="' + esc(g.type) + '">'
+          + (isExpanded ? '收起 ▴' : '还有 ' + (g.items.length - 1) + ' 个账号　展开 ▾')
+          + '</div>';
+      }
+      html += '</div>';
+    });
+
+    $('list').innerHTML = html;
+    $('totalCount').textContent = totalCount() + ' 条';
+    $('empty').style.display = fg.length === 0 ? 'flex' : 'none';
+    $('empty').querySelector('.empty-text').textContent =
+      keyword ? '没有匹配的账号' : '还没有账号，点右下角 + 添加';
+  }
+
+  function findItem(id) {
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].items.length; j++) {
+        if (groups[i].items[j].id === id) return { g: groups[i], item: groups[i].items[j] };
+      }
+    }
+    return null;
+  }
+
+  /* ---------- 交互 ---------- */
+  function toggleShow(id) {
+    var found = findItem(id);
+    if (!found) return;
+    var next = !showMap[id];
+    showMap[id] = next;
+    if (hideTimers[id]) clearTimeout(hideTimers[id]);
+    if (next) {
+      hideTimers[id] = setTimeout(function () {
+        showMap[id] = false;
+        render();
+      }, 10000);
+    }
+    render();
+  }
+
+  function copyText(text, tip) {
+    function done() { toast(tip); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } else {
+      fallbackCopy(text); done();
+    }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function toast(msg) {
+    var old = document.querySelector('.toast');
+    if (old) old.remove();
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 1800);
+  }
+
+  function genPassword() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
+    var pwd = '';
+    if (window.crypto && crypto.getRandomValues) {
+      var arr = new Uint32Array(16);
+      crypto.getRandomValues(arr);
+      for (var i = 0; i < 16; i++) pwd += chars[arr[i] % chars.length];
+    } else {
+      for (var j = 0; j < 16; j++) pwd += chars[Math.floor(Math.random() * chars.length)];
+    }
+    $('fPassword').value = pwd;
+  }
+
+  /* ---------- 新增 / 编辑 ---------- */
+  function openAdd() {
+    editingId = null;
+    editingType = '';
+    $('editorTitle').textContent = '新增账号';
+    $('fType').value = ''; $('fTitle').value = '';
+    $('fUsername').value = ''; $('fPassword').value = '';
+    $('editorMask').style.display = 'flex';
+  }
+
+  function openEdit(type, id) {
+    var found = findItem(id);
+    if (!found) return;
+    editingId = id;
+    editingType = type;
+    $('editorTitle').textContent = '编辑账号';
+    $('fType').value = type;
+    $('fTitle').value = found.item.title;
+    $('fUsername').value = found.item.username;
+    $('fPassword').value = decode(found.item.password);
+    $('editorMask').style.display = 'flex';
+  }
+
+  function closeEditor() { $('editorMask').style.display = 'none'; }
+
+  function saveItem() {
+    var f = {
+      type: $('fType').value.trim(),
+      title: $('fTitle').value.trim(),
+      username: $('fUsername').value.trim(),
+      password: $('fPassword').value
+    };
+    if (!f.type || !f.title || !f.username || !f.password) {
+      toast('请填写完整'); return;
+    }
+
+    if (editingId) {
+      var old = null;
+      for (var i = 0; i < groups.length; i++) {
+        if (groups[i].type === editingType) { old = groups[i]; break; }
+      }
+      if (old) {
+        old.items = old.items.filter(function (it) { return it.id !== editingId; });
+        if (old.items.length === 0) {
+          groups = groups.filter(function (g) { return g.type !== editingType; });
+        }
+      }
+      pushItem(f);
+    } else {
+      pushItem(f);
+    }
+
+    save();
+    closeEditor();
+    toast('已保存');
+    render();
+  }
+
+  function pushItem(f) {
+    var g = null;
+    for (var i = 0; i < groups.length; i++) {
+      if (groups[i].type === f.type) { g = groups[i]; break; }
+    }
+    if (!g) { g = { type: f.type, items: [] }; groups.push(g); }
+    g.items.push({
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+      title: f.title,
+      username: f.username,
+      password: encode(f.password)
+    });
+  }
+
+  /* ---------- 删除 ---------- */
+  function confirmDelete(type, id) {
+    pendingDelete = { type: type, id: id };
+    $('confirmMask').style.display = 'flex';
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  $('fab').addEventListener('click', openAdd);
+  $('btnCancel').addEventListener('click', closeEditor);
+  $('editorMask').addEventListener('click', function (e) {
+    if (e.target === this) closeEditor();
+  });
+  $('btnSave').addEventListener('click', saveItem);
+  $('dice').addEventListener('click', genPassword);
+
+  $('mCancel').addEventListener('click', function () {
+    pendingDelete = null;
+    $('confirmMask').style.display = 'none';
+  });
+  $('mConfirm').addEventListener('click', function () {
+    if (!pendingDelete) return;
+    var g = null;
+    for (var i = 0; i < groups.length; i++) {
+      if (groups[i].type === pendingDelete.type) { g = groups[i]; break; }
+    }
+    if (g) {
+      g.items = g.items.filter(function (it) { return it.id !== pendingDelete.id; });
+      if (g.items.length === 0) {
+        groups = groups.filter(function (x) { return x.type !== pendingDelete.type; });
+      }
+      save();
+    }
+    pendingDelete = null;
+    $('confirmMask').style.display = 'none';
+    render();
+  });
+
+  $('list').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    var id = el.getAttribute('data-id');
+    var type = el.getAttribute('data-type');
+
+    if (act === 'toggle') toggleShow(id);
+    else if (act === 'expand') { expanded[type] = !expanded[type]; render(); }
+    else if (act === 'copyUser') {
+      var fu = findItem(id);
+      if (fu) copyText(fu.item.username, '已复制账号');
+    }
+    else if (act === 'copyPwd') {
+      var fp = findItem(id);
+      if (fp) copyText(decode(fp.item.password), '已复制密码');
+    }
+    else if (act === 'edit') openEdit(type, id);
+    else if (act === 'del') confirmDelete(type, id);
+  });
+
+  $('searchInput').addEventListener('input', function () {
+    keyword = this.value;
+    $('searchClear').style.display = keyword ? 'block' : 'none';
+    render();
+  });
+  $('searchClear').addEventListener('click', function () {
+    $('searchInput').value = '';
+    keyword = '';
+    $('searchClear').style.display = 'none';
+    render();
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
