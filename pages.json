@@ -3,7 +3,14 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "你妈本👀"
+        "navigationBarTitleText": "你妈本👀",
+        "navigationBarBackgroundColor": "#0b1020",
+        "navigationBarTextStyle": "white",
+        "backgroundColor": "#0b1020",
+        "app-plus": {
+          "softinputMode": "adjustResize",
+          "bounce": "none"
+        }
       }
     }
   ]
