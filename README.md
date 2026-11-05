@@ -7,6 +7,17 @@
 
 两端数据互通（存储键 `pwd_groups`，编码方案一致），换机迁移无缝衔接。
 
+> 📱 **Android 安装包 v1.1.0**：[Gitee 下载（国内直连，推荐）](https://gitee.com/johnny-silver-hand123/uniapp-password/releases/download/v1.1.0/PasswordVault-v1.1.0.apk) ｜ [GitHub 下载](https://github.com/JohnnySilverhandV/uniapp-password/releases/download/v1.1.0/PasswordVault-v1.1.0.apk)
+>
+> 🌐 **网页版（H5）**：[offline-app/index.html](offline-app/index.html) — 单文件、零依赖，浏览器直接打开
+
+## 源码仓库
+
+| 平台 | 地址 |
+|---|---|
+| GitHub | https://github.com/JohnnySilverhandV/uniapp-password |
+| Gitee（国内直连） | https://gitee.com/johnny-silver-hand123/uniapp-password |
+
 ## 功能
 
 - **毛玻璃视觉**：深色渐变底 + 三层彩色光斑，卡片 / 搜索栏 / 弹窗全玻璃质感，卡片交错入场动画
