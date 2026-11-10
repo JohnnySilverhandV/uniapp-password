@@ -1,6 +1,6 @@
-# PasswordVault（你妈本👀）
+# uniapp-password · 密码本
 
-一个赛博玻璃风格的个人密码管理器，基于 uni-app（Vue 3）单页应用，一套代码双端交付：
+一个赛博玻璃风格的个人密码管理器（内部戏称「你妈本👀」），基于 uni-app（Vue 3）单页应用，一套代码双端交付：
 
 - **App 端**：`pages/index/index.vue`，HBuilderX 云打包出 APK，日常使用
 - **H5 端**：`offline-app/index.html`，零依赖单文件，浏览器直接打开，打包前快速验证交互
@@ -46,9 +46,9 @@
 - App 端避免 `requestAnimationFrame` 做关键动画，`setInterval` 更可靠
 - 编解码用 `btoa(unescape(encodeURIComponent(str)))` 包装，纯 ASCII 旧数据天然兼容
 
-## 更新日志
+## 🆕 更新日志
 
-### v1.1.0
+### v1.1.0 — 毛玻璃重构与安卓键盘修复（2026-11-04）
 
 - 毛玻璃视觉重构（光斑 + 玻璃卡片 + 入场动画）
 - 修复安卓键盘遮挡编辑弹窗
@@ -56,6 +56,12 @@
 - 修复中文密码存储崩溃
 - 新增搜索、复制密码、密码自动隐藏、强密码生成
 
-### v1.0.0
+### v1.0.0 — 首发
 
 - 首个版本：分组管理账号，支持复制 / 显隐 / 编辑 / 删除
+
+---
+
+## 📄 License
+
+MIT 许可证，详见 [LICENSE](LICENSE)。
